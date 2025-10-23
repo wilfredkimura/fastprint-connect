@@ -4,6 +4,8 @@ import { ShoppingCart, Menu, X, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   cartItemCount?: number;
@@ -11,6 +13,7 @@ interface HeaderProps {
 
 export const Header = ({ cartItemCount = 0 }: HeaderProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -24,7 +27,7 @@ export const Header = ({ cartItemCount = 0 }: HeaderProps) => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
           <div className="font-heading text-2xl font-bold gradient-hero bg-clip-text text-transparent">
-            FASTPRINTKE
+            FASTPRINT
           </div>
         </Link>
 
@@ -39,6 +42,11 @@ export const Header = ({ cartItemCount = 0 }: HeaderProps) => {
               {item.name}
             </Link>
           ))}
+          {user?.role === "admin" && (
+            <Link to="/admin" className="text-sm font-medium transition-colors hover:text-primary">
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center space-x-4">
@@ -63,6 +71,35 @@ export const Header = ({ cartItemCount = 0 }: HeaderProps) => {
             </Button>
           </Link>
 
+          {/* Auth Section (Desktop) */}
+          <div className="hidden md:flex items-center gap-3">
+            {!user && (
+              <>
+                <Link to="/login" className="text-sm font-medium hover:text-primary">Login</Link>
+                <Link to="/register">
+                  <Button size="sm">Register</Button>
+                </Link>
+              </>
+            )}
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">{user.name}</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {user.role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">Admin Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => logout()}>Logout</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="md:hidden">
@@ -82,6 +119,15 @@ export const Header = ({ cartItemCount = 0 }: HeaderProps) => {
                     {item.name}
                   </Link>
                 ))}
+                {user?.role === "admin" && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsOpen(false)}
+                    className="text-lg font-medium transition-colors hover:text-primary"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <a
                   href="tel:+254721248369"
                   className="flex items-center space-x-2 text-lg font-medium hover:text-primary transition-colors"
@@ -89,6 +135,18 @@ export const Header = ({ cartItemCount = 0 }: HeaderProps) => {
                   <Phone className="h-5 w-5" />
                   <span>0721 248 369</span>
                 </a>
+                {/* Auth Section (Mobile) */}
+                {!user && (
+                  <div className="pt-2 flex gap-3">
+                    <Link to="/login" onClick={() => setIsOpen(false)} className="text-lg font-medium hover:text-primary">Login</Link>
+                    <Link to="/register" onClick={() => setIsOpen(false)} className="text-lg font-medium hover:text-primary">Register</Link>
+                  </div>
+                )}
+                {user && (
+                  <button onClick={() => { logout(); setIsOpen(false); }} className="text-left text-lg font-medium hover:text-primary">
+                    Logout
+                  </button>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
