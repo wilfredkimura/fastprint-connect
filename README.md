@@ -71,3 +71,72 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Deploy to Vercel and Neon (PostgreSQL)
+
+This project is configured to deploy a Vite frontend and an Express API as a Vercel Serverless Function, and to use Neon (serverless Postgres) via Prisma.
+
+### 1) Create Neon database
+
+- Create a project at https://neon.tech and a database.
+- Copy the pooled connection string, e.g.
+  `postgresql://<user>:<password>@<neon-host>.neon.tech/<db>?sslmode=require`
+
+### 2) Set environment variables (Vercel → Project → Settings → Environment Variables)
+
+- `DATABASE_URL` = your Neon pooled connection string (recommended)
+  - Alternatively, set piecewise values and the app will build `DATABASE_URL` automatically:
+    - `NEON_HOST`, `NEON_USER`, `NEON_PASSWORD`, `NEON_DATABASE`
+- `JWT_SECRET` = a strong random string
+- `ADMIN_EMAIL` = `admin@example.com`
+- `ADMIN_PASSWORD` = `12345678`
+- `ADMIN_NAME` = `Admin User`
+
+### 3) One-time Prisma migration against Neon
+
+Option A (local):
+
+```bash
+# Ensure local has Prisma CLI available
+npm i
+npm run postinstall  # runs "prisma generate --schema=server/prisma/schema.prisma"
+
+# Point DATABASE_URL to your Neon URL in environment for this command
+npx prisma migrate deploy --schema=server/prisma/schema.prisma
+```
+
+Option B (CI task): run `prisma migrate deploy` once against Neon after setting envs.
+
+### 4) Deploy to Vercel
+
+- Push repo to GitHub/GitLab/Bitbucket and import into Vercel.
+- Build settings (auto-detected):
+  - Install: `npm install` (postinstall generates Prisma client)
+  - Build: `npm run build`
+  - Output: `dist`
+- Serverless API is in `api/index.js` and is mounted at `/api/*`.
+
+### 5) SPA rewrites (already added)
+
+- `vercel.json` at the repo root:
+
+```json
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}
+```
+
+### 6) Verify
+
+- API health: `https://<your-app>.vercel.app/api/health` → `{ ok: true }`
+- Frontend: `https://<your-app>.vercel.app/`
+- Login with seeded admin (`admin@example.com` / `12345678`). If the user already exists, delete it from the DB to re-seed.
+
+### Local development tips
+
+- Frontend dev: `npm run dev` → http://localhost:5173
+- Backend local (optional): `server/index.js` on http://localhost:4000
+- Frontend API base defaults to `"/api"` for Vercel. For local split-ports, set `VITE_API_URL=http://localhost:4000/api` in `.env.local`.
