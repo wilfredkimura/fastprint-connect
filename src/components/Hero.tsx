@@ -5,12 +5,12 @@ import { ArrowRight, Palette, Shirt, Frame } from "lucide-react";
 export const Hero = () => {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 gradient-hero opacity-10 dark:opacity-20" />
+      {/* Removed gradient background overlay */}
       
       <div className="container relative py-24 md:py-32">
         <div className="flex flex-col items-center text-center space-y-8 animate-fade-in">
           <div className="space-y-4 max-w-3xl">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight gradient-hero bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
               FASTPRINT
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
