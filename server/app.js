@@ -25,6 +25,11 @@ export function createApp() {
     }
   });
 
+  // Root handler so GET /api returns a valid response on Vercel
+  app.get('/', (req, res) => {
+    res.json({ ok: true, service: 'api' });
+  });
+
   // Mount without '/api' so Vercel function at '/api' exposes these at '/api/*'
   app.use('/auth', authRoutes);
   app.use('/users', userRoutes);
@@ -32,6 +37,21 @@ export function createApp() {
   app.use('/orders', orderRoutes);
   app.use('/categories', categoryRoutes);
   app.use('/admin', adminRoutes);
+
+  // 404 handler for unknown API routes
+  app.use((req, res, next) => {
+    if (req.method && req.path) {
+      return res.status(404).json({ error: 'Not found', method: req.method, path: req.path });
+    }
+    next();
+  });
+
+  // Global error handler to avoid 500 without JSON body
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  app.use((err, req, res, next) => {
+    // Optional: console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
 
   return app;
 }
