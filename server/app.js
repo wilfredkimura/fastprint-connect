@@ -16,9 +16,25 @@ export function createApp() {
   app.use(express.json({ limit: '1mb' }));
   app.use(morgan('dev'));
 
+  // Basic request timing logs
+  app.use((req, res, next) => {
+    const start = Date.now();
+    const { method, url } = req;
+    res.on('finish', () => {
+      const ms = Date.now() - start;
+      // eslint-disable-next-line no-console
+      console.log(`[api] ${method} ${url} -> ${res.statusCode} in ${ms}ms`);
+    });
+    next();
+  });
+
   app.get('/health', async (req, res) => {
     try {
+      const t0 = Date.now();
       await prisma.$queryRaw`SELECT 1`;
+      const ms = Date.now() - t0;
+      // eslint-disable-next-line no-console
+      console.log(`[api] prisma health query took ${ms}ms`);
       res.json({ ok: true });
     } catch (e) {
       res.status(500).json({ ok: false, error: String(e) });
