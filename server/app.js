@@ -28,7 +28,7 @@ export function createApp() {
     next();
   });
 
-  app.get('/health', async (req, res) => {
+  const healthHandler = async (req, res) => {
     try {
       const t0 = Date.now();
       await prisma.$queryRaw`SELECT 1`;
@@ -39,10 +39,15 @@ export function createApp() {
     } catch (e) {
       res.status(500).json({ ok: false, error: String(e) });
     }
-  });
+  };
+  app.get('/health', healthHandler);
+  app.get('/api/health', healthHandler);
 
   // Root handler so GET /api returns a valid response on Vercel
   app.get('/', (req, res) => {
+    res.json({ ok: true, service: 'api' });
+  });
+  app.get('/api', (req, res) => {
     res.json({ ok: true, service: 'api' });
   });
 
@@ -53,6 +58,14 @@ export function createApp() {
   app.use('/orders', orderRoutes);
   app.use('/categories', categoryRoutes);
   app.use('/admin', adminRoutes);
+
+  // Duplicate mounts under /api/* to handle path forwarding differences
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/products', productRoutes);
+  app.use('/api/orders', orderRoutes);
+  app.use('/api/categories', categoryRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // 404 handler for unknown API routes
   app.use((req, res, next) => {
